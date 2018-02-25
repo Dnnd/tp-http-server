@@ -4,13 +4,14 @@
 
 #include <QtNetwork/QTcpServer>
 #include <QThreadPool>
-#include "SocketHandlerHolder.h"
-#include "HolderController.h"
+#include "../HttpHandlerHolder/HttpHandlerHolder.h"
+#include "../HolderController/HolderController.h"
+#include "HandlersHoldersFactory.h"
 
 class ConcurrentTcpServer : public QTcpServer {
 Q_OBJECT
 public:
-    explicit ConcurrentTcpServer(unsigned threadsLimit, QObject *parent = nullptr);
+    explicit ConcurrentTcpServer(unsigned threadsLimit, std::unique_ptr<HandlersHoldersFactory> holdersFactory, QObject *parent = nullptr);
     void incomingConnection(qintptr socketDescriptor) override;
     ~ConcurrentTcpServer() override;
 protected:
@@ -19,6 +20,7 @@ private:
     std::vector<QThread> threadPool_;
     std::vector<HolderController*> holderControllers_;
     std::size_t topThread{0};
+    std::unique_ptr<HandlersHoldersFactory> holdersFactory_;
 };
 
 

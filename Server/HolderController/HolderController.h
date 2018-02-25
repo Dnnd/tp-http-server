@@ -7,7 +7,7 @@
 class HolderController : public QObject{
     Q_OBJECT
 public:
-    void sheduleConnectionRegistration(int socketDescriptor);
+    void scheduleConnectionRegistration(int socketDescriptor);
 signals:
     void newDescriptor(int socketDescriptor);
 };

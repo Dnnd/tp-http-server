@@ -4,8 +4,8 @@
 
 #include <QtCore/QArgument>
 #include <QtNetwork/QTcpServer>
-#include "../Config/Config.h"
-#include "ConcurrentTcpServer/ConcurrentTcpServer.h"
+#include "../../Config/Config.h"
+#include "../ConcurrentTcpServer/ConcurrentTcpServer.h"
 
 class HttpServer : public QObject {
 Q_OBJECT
