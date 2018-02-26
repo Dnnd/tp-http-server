@@ -1,7 +1,9 @@
 
 #include <QtCore/QDateTime>
 #include "HttpHandler.h"
-
+namespace {
+    const char * CRLF = "\r\n";
+}
 const QString HttpHandler::dateformat{"ddd',' d MMM yyyy hh:mm:ss 'GWT'"};
 
 HttpHandler::HttpHandler(const QString &documentRoot, QTcpSocket *socket, QObject *parent)
@@ -65,6 +67,7 @@ void HttpHandler::processGetRequest() {
 
     QObject::connect(&asyncExecutor_, &QTimer::timeout, this, &HttpHandler::asyncReadFile);
     QObject::connect(&asyncExecutor_, &QTimer::timeout, this, &HttpHandler::asyncWriteToSocket);
+    QObject::connect(socket_, &QTcpSocket::bytesWritten, this, &HttpHandler::countSentBytes);
     asyncExecutor_.start();
 }
 
@@ -78,15 +81,7 @@ void HttpHandler::asyncWriteToSocket() {
         qDebug() << socket_->errorString();
         closeConnection();
     }
-    qDebug() << chunkWritten;
     bytesWritten_ += chunkWritten;
-    if (allBytesInBuffer && outputBuffer_.length() <= bytesWritten_) {
-        qDebug() << "done: bytes written " << bytesWritten_;
-        qDebug() << "Output Buffer: " << outputBuffer_;
-        asyncExecutor_.stop();
-        closeConnection();
-        emit finish(this);
-    }
 }
 
 void HttpHandler::asyncReadFile() {
@@ -108,14 +103,14 @@ void HttpHandler::writeHeader(std::string headerName, std::string headerValue) {
     outputBuffer_.append(headerName.data(), headerName.size());
     outputBuffer_.append(": ");
     outputBuffer_.append(headerValue.data(), headerValue.size());
-    outputBuffer_.append("\n");
+    outputBuffer_.append(CRLF);
 }
 
 void HttpHandler::writeHeader(std::string headerName, const QString &headerValue) {
     outputBuffer_.append(headerName.data(), headerName.size());
     outputBuffer_.append(": ");
     outputBuffer_.append(headerValue);
-    outputBuffer_.append("\n");
+    outputBuffer_.append(CRLF);
 }
 
 void HttpHandler::writeDefaultHeaders() {
@@ -130,9 +125,23 @@ void HttpHandler::writeResponseString(HttpStatusCode code) {
     outputBuffer_.append(std::to_string(code).data());
     outputBuffer_.append(' ');
     outputBuffer_.append(codeName(code).data());
-    outputBuffer_.append('\n');
+    outputBuffer_.append(CRLF);
 
 }
+
+void HttpHandler::countSentBytes(qint64 sentChunk) {
+    bytesSent_ += sentChunk;
+
+    if (allBytesInBuffer && bytesSent_ >= outputBuffer_.size()) {
+        qDebug() << "done: bytes written " << bytesWritten_;
+        qDebug() << "done: bytes sent " << bytesSent_;
+        qDebug() << "Output Buffer: " << outputBuffer_;
+        asyncExecutor_.stop();
+        closeConnection();
+        emit finish(this);
+    }
+}
+
 
 
 

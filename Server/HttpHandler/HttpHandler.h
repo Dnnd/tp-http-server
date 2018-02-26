@@ -15,7 +15,6 @@ Q_OBJECT
 public:
     explicit HttpHandler(const QString &documentRoot, QTcpSocket *socket, QObject *parent = nullptr);
 
-
     void handleNewData() override;
 
     void handleDisconnect() override;
@@ -38,12 +37,16 @@ protected slots:
 
     void asyncWriteToSocket();
     void asyncReadFile();
+    void countSentBytes(qint64 sentChunk);
 
 private:
     QByteArray buffer_;
     QByteArray outputBuffer_;
     QTimer asyncExecutor_;
+
     std::size_t bytesWritten_{0};
+    std::size_t bytesSent_{0};
+
     HttpParser parser_;
     HttpRequestInfo requestInfo_;
     QFile *source;

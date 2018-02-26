@@ -8,12 +8,12 @@ void HandlerHolder::registerConnection(int socketDescriptor) {
         qDebug() << socket->error();
     }
     Handler *handler = createHandler(socket, this);
-    qDebug() << "handler created";
+
     registerHandler(handler);
 }
 
 void HandlerHolder::registerHandler(Handler *handler) {
-    qDebug() << "handler registered";
+
     QObject::connect(handler, &Handler::finish, this, &HandlerHolder::removeHandler);
     handlers_.insert(handler);
 }

@@ -128,7 +128,6 @@ HttpParser::ExternalState HttpParser::switchToVersionParsing() {
     QString path{buffer_->mid(uriBegin_, (pos - 1) - uriBegin_).prepend("./")};
 
 
-    qDebug() << document_.path();
 
     if (!document_.exists(path)) {
         qDebug() << document_.absoluteFilePath(path) << " not exists";
@@ -143,8 +142,18 @@ HttpParser::ExternalState HttpParser::switchToVersionParsing() {
         requestInfo_.file.append("index.html");
     }
     fileInfo.setFile(requestInfo_.file);
-    qDebug() << fileInfo.fileName();
-    requestInfo_.mimeType = mimeDb.mimeTypeForName(fileInfo.fileName()).name();
+
+
+    QMimeType mimeType = mimeDb.mimeTypeForFile(fileInfo.fileName());
+
+    if (mimeType.inherits("application/x-extension-html")) {
+        requestInfo_.mimeType = "text/html";
+    } else if (mimeType.inherits("application/vnd.adobe.flash.movie")) {
+        requestInfo_.mimeType = "application/x-shockwave-flash";
+    } else {
+        requestInfo_.mimeType = mimeType.name();
+    }
+
     requestInfo_.size = static_cast<size_t>(fileInfo.size());
     internalState_ = InternalState::Version;
     return parseVersion();
@@ -166,6 +175,7 @@ HttpParser::ExternalState HttpParser::parseVersion() {
             return ExternalState::Error;
         }
     }
+
     if (pos - versionBegin_ == version_.length()) {
         requestInfo_.version = version_.data();
         return ExternalState::Finished;

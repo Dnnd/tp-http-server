@@ -1,4 +1,3 @@
-
 #include <QtNetwork/QTcpSocket>
 #include "HttpHandlerHolder.h"
 #include "../HttpHandler/HttpHandler.h"
