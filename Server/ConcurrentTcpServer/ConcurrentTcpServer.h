@@ -7,6 +7,7 @@
 #include "../HttpHandlerHolder/HttpHandlerHolder.h"
 #include "../HolderController/HolderController.h"
 #include "HandlersHoldersFactory.h"
+#include <memory>
 
 class ConcurrentTcpServer : public QTcpServer {
 Q_OBJECT

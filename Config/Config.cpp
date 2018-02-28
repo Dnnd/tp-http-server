@@ -29,7 +29,7 @@ void Config::setDocumentRoot(const QString &documentRoot) {
 }
 
 bool Config::applyConfigLine(QString configLine) {
-    QStringList statements{configLine.split(" ")};
+    QStringList statements{configLine.trimmed().split(" ")};
     if (statements.length() != 2) {
         return false;
     }
@@ -38,6 +38,7 @@ bool Config::applyConfigLine(QString configLine) {
     bool ok = true;
     if (key == LISTEN_KEY) {
         auto listen = static_cast<uint16_t>(statements.at(1).toUInt(&ok));
+
         if (!ok) {
             return false;
         } else {
@@ -78,20 +79,31 @@ bool Config::readConfig(const QString &fileName) {
             return false;
         }
     }
-    fileName_ = fileName;
+
     isValid_ = true;
     return true;
 }
 
 Config::Config(std::string listenKey, std::string cpuLimitKey, std::string documentRootKey)
-        : LISTEN_KEY{std::move(listenKey)},
-          CPU_LIMIT_KEY{std::move(cpuLimitKey)},
-          DOCUMENT_ROOT_KEY{std::move(documentRootKey)} {
+  : LISTEN_KEY{std::move(listenKey)},
+    CPU_LIMIT_KEY{std::move(cpuLimitKey)},
+    DOCUMENT_ROOT_KEY{std::move(documentRootKey)} {
 
 }
 
 bool Config::isValid() const {
     return isValid_;
+}
+
+Config::Config(Config &&other) noexcept
+  : LISTEN_KEY{other.LISTEN_KEY},
+    CPU_LIMIT_KEY{other.CPU_LIMIT_KEY},
+    DOCUMENT_ROOT_KEY{other.DOCUMENT_ROOT_KEY},
+    isValid_{other.isValid_},
+    port_{other.port_},
+    cpuLimit_{other.cpuLimit_},
+    documentRoot_{other.documentRoot_} {
+
 }
 
 

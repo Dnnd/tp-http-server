@@ -3,17 +3,19 @@
 
 ConcurrentTcpServer::ConcurrentTcpServer(unsigned threadsLimit, std::unique_ptr<HandlersHoldersFactory> holdersFactory,
                                          QObject *parent)
-        : QTcpServer{parent},
-          threadPool_{threadsLimit},
-          holdersFactory_{std::move(holdersFactory)},
-          topThread{0} {
+  : QTcpServer{parent},
+    threadPool_{threadsLimit},
+    holdersFactory_{std::move(holdersFactory)},
+    topThread{0} {
 
     for (auto &&thread : threadPool_) {
         HandlerHolder *holder = holdersFactory_->createHandlerHolder();
         auto *controller = new HolderController{};
 
-        QObject::connect(controller, &HolderController::newDescriptor,
-                         holder, &HandlerHolder::registerConnection);
+        QObject::connect(controller,
+                         &HolderController::newDescriptor,
+                         holder,
+                         &HandlerHolder::registerConnection);
 
         QObject::connect(&thread, &QThread::finished, holder, &QObject::deleteLater);
 
@@ -38,6 +40,7 @@ ConcurrentTcpServer::~ConcurrentTcpServer() {
     for (auto &&controller: holderControllers_) {
         controller->deleteLater();
     }
+
     for (auto &&thread: threadPool_) {
         thread.quit();
         thread.wait();

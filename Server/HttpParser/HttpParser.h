@@ -8,6 +8,7 @@
 #include <QtCore/QDir>
 #include <unordered_map>
 #include <QtCore/QMimeDatabase>
+#include <unordered_set>
 #include "defs.h"
 #include "HttpRequestInfo.h"
 
@@ -71,6 +72,8 @@ private:
     static const std::unordered_map<std::string, HttpMethod > methodsCodes;
 
     static const std::unordered_map<HttpMethod, bool > implementationStatus;
+
+    const QRegExp versionRe_;
 
     static const QMimeDatabase mimeDb;
 

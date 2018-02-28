@@ -5,36 +5,37 @@
 #include <QDebug>
 
 const std::unordered_map<HttpMethod, bool> HttpParser::implementationStatus = {
-        {HttpMethod::GET,     true},
-        {HttpMethod::HEAD,    true},
+  {HttpMethod::GET,     true},
+  {HttpMethod::HEAD,    true},
 
-        {HttpMethod::POST,    false},
-        {HttpMethod::PUT,     false},
-        {HttpMethod::OPTIONS, false},
-        {HttpMethod::DELETE,  false},
-        {HttpMethod::PATCH,   false},
+  {HttpMethod::POST,    false},
+  {HttpMethod::PUT,     false},
+  {HttpMethod::OPTIONS, false},
+  {HttpMethod::DELETE,  false},
+  {HttpMethod::PATCH,   false},
 };
 
 const std::unordered_map<std::string, HttpMethod> HttpParser::methodsCodes = {
-        {"GET",     HttpMethod::GET},
-        {"HEAD",    HttpMethod::HEAD},
+  {"GET",     HttpMethod::GET},
+  {"HEAD",    HttpMethod::HEAD},
 
-        {"POST",    HttpMethod::POST},
-        {"PUT",     HttpMethod::PUT},
-        {"OPTIONS", HttpMethod::OPTIONS},
-        {"DELETE",  HttpMethod::DELETE},
-        {"PATCH",   HttpMethod::PATCH},
+  {"POST",    HttpMethod::POST},
+  {"PUT",     HttpMethod::PUT},
+  {"OPTIONS", HttpMethod::OPTIONS},
+  {"DELETE",  HttpMethod::DELETE},
+  {"PATCH",   HttpMethod::PATCH},
 };
 
 const QMimeDatabase HttpParser::mimeDb{};
 
 HttpParser::HttpParser(QString documentRoot, QByteArray *buffer)
-        : buffer_{buffer},
-          pos{0},
-          uriBegin_{0},
-          document_{documentRoot},
-          externalState_{ExternalState::Processing},
-          internalState_{InternalState::None} {
+  : buffer_{buffer},
+    pos{0},
+    uriBegin_{0},
+    document_{documentRoot},
+    externalState_{ExternalState::Processing},
+    internalState_{InternalState::None},
+    versionRe_{R"(^HTTP/1\.[01]{1}$)"} {
 }
 
 HttpParser::ExternalState HttpParser::parse() {
@@ -66,11 +67,13 @@ HttpParser::ExternalState HttpParser::parseMethod() {
     if (buffer_->length() == pos) {
         return ExternalState::Processing;
     }
+
     for (; pos < buffer_->length(); ++pos) {
         if (buffer_->at(pos) == ' ') {
             return switchToUriParsing();
         }
     }
+
     return ExternalState::Processing;
 }
 
@@ -125,12 +128,14 @@ HttpParser::ExternalState HttpParser::parseUri() {
 }
 
 HttpParser::ExternalState HttpParser::switchToVersionParsing() {
-    QString path{buffer_->mid(uriBegin_, (pos - 1) - uriBegin_).prepend("./")};
-
-
+    QUrl url(buffer_->mid(uriBegin_, (pos - 1) - uriBegin_).prepend("./"));
+    if (!url.isValid()) {
+        return setErrorCode(HttpStatusCode::BadRequest);
+    }
+    auto path = url.path();
 
     if (!document_.exists(path)) {
-        qDebug() << document_.absoluteFilePath(path) << " not exists";
+        qInfo() << document_.absoluteFilePath(path) << " not exists";
         return setErrorCode(HttpStatusCode::NotFound);
     }
 
@@ -170,16 +175,17 @@ HttpParser::ExternalState HttpParser::parseVersion() {
         return ExternalState::Processing;
     }
 
-    for (; pos < buffer_->length() && pos < version_.length() + versionBegin_; ++pos) {
-        if (buffer_->at(pos) != version_[pos - versionBegin_]) {
-            return ExternalState::Error;
+    for (; pos < buffer_->length(); ++pos) {
+        if (buffer_->at(pos) == '\n') {
+            requestInfo_.version = buffer_->mid(versionBegin_, (pos - 1) - versionBegin_);
+            if (!versionRe_.exactMatch(requestInfo_.version)) {
+                return setErrorCode(HttpStatusCode::BadRequest);
+            } else {
+                return ExternalState::Finished;
+            }
         }
     }
 
-    if (pos - versionBegin_ == version_.length()) {
-        requestInfo_.version = version_.data();
-        return ExternalState::Finished;
-    }
     return ExternalState::Processing;
 }
 

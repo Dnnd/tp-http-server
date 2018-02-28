@@ -5,7 +5,7 @@ void HandlerHolder::registerConnection(int socketDescriptor) {
     auto *socket = new QTcpSocket{this};
 
     if (!socket->setSocketDescriptor(socketDescriptor)) {
-        qDebug() << socket->error();
+        qInfo() << socket->error();
     }
     Handler *handler = createHandler(socket, this);
 

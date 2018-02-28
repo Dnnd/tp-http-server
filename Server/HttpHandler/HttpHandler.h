@@ -9,51 +9,64 @@
 #include <QtCore/QMimeDatabase>
 #include "../ConcurrentTcpServer/Handler.h"
 #include "../HttpParser/HttpParser.h"
+#include "../../IOBuffer/IOBuffer.h"
 
 class HttpHandler : public Handler {
 Q_OBJECT
 public:
-    explicit HttpHandler(const QString &documentRoot, QTcpSocket *socket, QObject *parent = nullptr);
+  explicit HttpHandler(const QString &documentRoot, QTcpSocket *socket, QObject *parent = nullptr);
 
-    void handleNewData() override;
+  void handleNewData() override;
 
-    void handleDisconnect() override;
+  void handleDisconnect() override;
 
-    void handleError(QTcpSocket::SocketError error) override;
+  void handleError(QTcpSocket::SocketError error) override;
 
-    void closeConnection();
+  void closeConnection();
 
 
-    void processGetRequest();
-    void writeDefaultHeaders();
-    void writeResponseString(HttpStatusCode code);
+  void processGetRequest();
 
-    void writeHeader(std::string headerName, std::string headerValue);
-    void writeHeader(std::string headerName, const QString &headerValue);
+  void writeDefaultHeaders();
 
-    static const int CHUNK_SIZE = 64 * 1024;
+  void writeResponseString(HttpStatusCode code);
+
+  void writeHeader(std::string headerName, std::string headerValue);
+
+  void writeHeader(std::string headerName, const QString &headerValue);
+
+  static const int CHUNK_SIZE = 64 * 1024;
 
 protected slots:
 
-    void asyncWriteToSocket();
-    void asyncReadFile();
-    void countSentBytes(qint64 sentChunk);
+  void asyncWriteToSocket();
+
+  void asyncReadFile();
+
+  void countSentBytes(qint64 sentChunk);
 
 private:
-    QByteArray buffer_;
-    QByteArray outputBuffer_;
-    QTimer asyncExecutor_;
 
-    std::size_t bytesWritten_{0};
-    std::size_t bytesSent_{0};
+  QByteArray buffer_;
 
-    HttpParser parser_;
-    HttpRequestInfo requestInfo_;
-    QFile *source;
+  QTimer asyncExecutor_;
 
-    static const QString dateformat;
-    bool allBytesInBuffer{false};
-    void processHeadRequest();
+  IOBuffer outputBuffer_{CHUNK_SIZE * 2};
+  QByteArray responseMetaInfoBuffer_;
+
+  std::size_t bytesWritten_{0};
+  std::size_t bytesSent_{0};
+
+  HttpParser parser_;
+  HttpRequestInfo requestInfo_;
+  QFile *source;
+
+  static const QString dateformat;
+  bool allBytesInBuffer{false};
+
+  void processHeadRequest();
+
+  void flushResponseMetaInfo();
 };
 
 
