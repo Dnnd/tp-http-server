@@ -93,17 +93,16 @@ HttpParser::ExternalState HttpParser::switchToUriParsing() {
     auto[code, isImplemented] = *implementationStatus.find(methodCode);
 
     if (!isImplemented) {
-        return setErrorCode(HttpStatusCode::NotImplemented);
+        setErrorCode(HttpStatusCode::NotImplemented);
     }
-    requestInfo_.method = methodCode;
 
     if (buffer_->at(static_cast<int>(pos)) == ' ') {
         uriBegin_ = ++pos;
         internalState_ = InternalState::Uri;
         requestInfo_.method = methodCode;
-
         return parseUri();
     }
+
     return ExternalState::Error;
 }
 
@@ -128,17 +127,25 @@ HttpParser::ExternalState HttpParser::parseUri() {
 }
 
 HttpParser::ExternalState HttpParser::switchToVersionParsing() {
+
     QUrl url(buffer_->mid(uriBegin_, (pos - 1) - uriBegin_).prepend("./"));
+
     if (!url.isValid()) {
         return setErrorCode(HttpStatusCode::BadRequest);
     }
+
     auto path = url.path();
 
-    if (!document_.exists(path)) {
-        qInfo() << document_.absoluteFilePath(path) << " not exists";
-        return setErrorCode(HttpStatusCode::NotFound);
+    if (document_.relativeFilePath(path).startsWith("..")) {
+        qInfo() << document_.relativeFilePath(path);
+        setErrorCode(HttpStatusCode::Forbidden);
+        return parseVersion();
     }
 
+    if (!document_.exists(path)) {
+        setErrorCode(HttpStatusCode::NotFound);
+        return parseVersion();
+    }
     requestInfo_.file = document_.absoluteFilePath(path);
 
     QFileInfo fileInfo{requestInfo_.file};
@@ -179,10 +186,9 @@ HttpParser::ExternalState HttpParser::parseVersion() {
         if (buffer_->at(pos) == '\n') {
             requestInfo_.version = buffer_->mid(versionBegin_, (pos - 1) - versionBegin_);
             if (!versionRe_.exactMatch(requestInfo_.version)) {
-                return setErrorCode(HttpStatusCode::BadRequest);
-            } else {
-                return ExternalState::Finished;
+                setErrorCode(HttpStatusCode::BadRequest);
             }
+            return parseRequestEnd();
         }
     }
 
@@ -200,6 +206,22 @@ HttpStatusCode HttpParser::getErrorCode() const {
 
 HttpRequestInfo HttpParser::takeRequestInfo() {
     return std::move(requestInfo_);
+}
+
+HttpParser::ExternalState HttpParser::parseRequestEnd() {
+
+    for (; pos < buffer_->length() - 1; ++pos) {
+        if (buffer_->at(pos) == '\n'
+            && buffer_->at(pos + 1) == '\r') {
+            if (errorCode_ == 200) {
+                return ExternalState::Finished;
+            } else {
+                return ExternalState::Error;
+            }
+        }
+    }
+
+    return ExternalState::Processing;
 }
 
 

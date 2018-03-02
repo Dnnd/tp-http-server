@@ -2,6 +2,7 @@
 #include <QCoreApplication>
 #include <QtCore/QFileInfo>
 #include <QtCore/QUrl>
+#include <QtCore/QDir>
 #include "Config/Config.h"
 #include "Server/HttpServer/HttpServer.h"
 
@@ -11,6 +12,8 @@ int main(int argc, char **argv) {
 
     Config conf;
     conf.readConfig("/etc/httpd.conf");
+    qInfo() << QDir{"/home/danm/code/http-test-sute/"}.
+      relativeFilePath("//httptest/../../../../../../../../../../../../../etc/passwd").startsWith("..");
 
     HttpServer server{std::move(conf), &app};
 

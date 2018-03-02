@@ -1,7 +1,3 @@
-//
-// Created by danm on 25.02.18.
-//
-
 #ifndef TP_HTTP_SERVER_DEFS_H
 #define TP_HTTP_SERVER_DEFS_H
 

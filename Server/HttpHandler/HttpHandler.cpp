@@ -23,13 +23,15 @@ void HttpHandler::handleNewData() {
     switch (parser_.parse()) {
         case HttpParser::ExternalState::Processing:
             break;
+
         case HttpParser::ExternalState::Error:
-            qInfo() << "Error: invalid http header " << buffer_;
+            requestInfo_ = parser_.takeRequestInfo();
             writeResponseString(parser_.getErrorCode());
+            qInfo() << parser_.getErrorCode();
             writeDefaultHeaders();
-            closeConnection();
-            emit finish(this);
+            sendDefaultResponse();
             break;
+
         case HttpParser::ExternalState::Finished:
             qInfo() << "Success: " << buffer_;
             requestInfo_ = parser_.takeRequestInfo();
@@ -39,6 +41,8 @@ void HttpHandler::handleNewData() {
                 processGetRequest();
             } else if (requestInfo_.method == HttpMethod::HEAD) {
                 processHeadRequest();
+            } else {
+                sendDefaultResponse();
             }
             break;
     }
@@ -63,7 +67,9 @@ void HttpHandler::processGetRequest() {
     source->setParent(this);
 
     if (!source->open(QFile::ReadOnly)) {
-        closeConnection();
+        flushResponseMetaInfo();
+        asyncFlushBuffer();
+        return;
     }
 
     writeHeader("Content-Length", std::to_string(source->size()));
@@ -107,6 +113,7 @@ void HttpHandler::asyncReadFile() {
         QObject::disconnect(&asyncExecutor_, &QTimer::timeout, this, &HttpHandler::asyncReadFile);
         allBytesInBuffer = true;
     }
+
 }
 
 void HttpHandler::processHeadRequest() {
@@ -114,9 +121,7 @@ void HttpHandler::processHeadRequest() {
     writeHeader("Content-Length", std::to_string(fileInfo.size()));
     writeHeader("Content-Type", requestInfo_.mimeType);
     flushResponseMetaInfo();
-    allBytesInBuffer = true;
-    QObject::connect(&asyncExecutor_, &QTimer::timeout, this, &HttpHandler::asyncWriteToSocket);
-    QObject::connect(socket_, &QTcpSocket::bytesWritten, this, &HttpHandler::countSentBytes);
+    asyncFlushBuffer();
 
     asyncExecutor_.start();
 }
@@ -168,6 +173,18 @@ void HttpHandler::flushResponseMetaInfo() {
     QBuffer buffWrapper{&responseMetaInfoBuffer_};
     buffWrapper.open(QBuffer::OpenModeFlag::ReadWrite);
     bytesWritten_ += outputBuffer_.writeToBuffer(&buffWrapper, responseMetaInfoBuffer_.size());
+}
+
+void HttpHandler::asyncFlushBuffer() {
+    allBytesInBuffer = true;
+    QObject::connect(&asyncExecutor_, &QTimer::timeout, this, &HttpHandler::asyncWriteToSocket);
+    QObject::connect(socket_, &QTcpSocket::bytesWritten, this, &HttpHandler::countSentBytes);
+    asyncExecutor_.start();
+}
+
+void HttpHandler::sendDefaultResponse() {
+    flushResponseMetaInfo();
+    asyncFlushBuffer();
 }
 
 

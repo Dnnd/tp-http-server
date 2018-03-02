@@ -81,6 +81,7 @@ private:
 
     ExternalState setErrorCode(HttpStatusCode code);
 
+  ExternalState parseRequestEnd();
 };
 
 

@@ -27,6 +27,8 @@ public:
 
   void processGetRequest();
 
+  void asyncFlushBuffer();
+
   void writeDefaultHeaders();
 
   void writeResponseString(HttpStatusCode code);
@@ -44,6 +46,7 @@ protected slots:
   void asyncReadFile();
 
   void countSentBytes(qint64 sentChunk);
+
 
 private:
 
@@ -67,6 +70,8 @@ private:
   void processHeadRequest();
 
   void flushResponseMetaInfo();
+
+  void sendDefaultResponse();
 };
 
 
