@@ -137,7 +137,7 @@ HttpParser::ExternalState HttpParser::switchToVersionParsing() {
     auto path = url.path();
 
     if (document_.relativeFilePath(path).startsWith("..")) {
-        qInfo() << document_.relativeFilePath(path);
+        qDebug() << document_.relativeFilePath(path);
         setErrorCode(HttpStatusCode::Forbidden);
         return parseVersion();
     }

@@ -77,8 +77,6 @@ private:
 
     static const QMimeDatabase mimeDb;
 
-    std::string_view version_{"HTTP/1.1"};
-
     ExternalState setErrorCode(HttpStatusCode code);
 
   ExternalState parseRequestEnd();

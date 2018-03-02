@@ -27,13 +27,13 @@ void HttpHandler::handleNewData() {
         case HttpParser::ExternalState::Error:
             requestInfo_ = parser_.takeRequestInfo();
             writeResponseString(parser_.getErrorCode());
-            qInfo() << parser_.getErrorCode();
+            qDebug() << parser_.getErrorCode();
             writeDefaultHeaders();
             sendDefaultResponse();
             break;
 
         case HttpParser::ExternalState::Finished:
-            qInfo() << "Success: " << buffer_;
+            qDebug() << "Success: " << buffer_;
             requestInfo_ = parser_.takeRequestInfo();
             writeResponseString(parser_.getErrorCode());
             writeDefaultHeaders();
@@ -54,7 +54,7 @@ void HttpHandler::handleDisconnect() {
 }
 
 void HttpHandler::handleError(QTcpSocket::SocketError error) {
-    qInfo() << socket_->errorString();
+    qDebug() << socket_->errorString();
     socket_->deleteLater();
 }
 
@@ -63,12 +63,16 @@ void HttpHandler::closeConnection() {
 }
 
 void HttpHandler::processGetRequest() {
-    source = new QFile{requestInfo_.file};
-    source->setParent(this);
+    if (source == nullptr) {
+        source = new QFile{requestInfo_.file};
+        source->setParent(this);
+    }
 
     if (!source->open(QFile::ReadOnly)) {
-        flushResponseMetaInfo();
-        asyncFlushBuffer();
+      //  qInfo() << source->errorString();
+        QTimer::singleShot(0, this, [this] {
+          processGetRequest();
+        });
         return;
     }
 
@@ -93,7 +97,7 @@ void HttpHandler::asyncWriteToSocket() {
     outputBuffer_.readFromBuffer(socket_, bytesToEnd + bytesFromBegin);
 
     if (bytesSent_ == -1) {
-        qInfo() << socket_->errorString();
+        qDebug() << socket_->errorString();
         closeConnection();
     }
 
@@ -106,10 +110,11 @@ void HttpHandler::asyncReadFile() {
 
     bytesWritten_ += outputBuffer_.writeToBuffer(source, CHUNK_SIZE);
 
-    qInfo() << "written" << bytesWritten_;
+    qDebug() << "written" << bytesWritten_;
 
     if (source->atEnd()) {
-        qInfo() << "all bytes in buffer";
+        qDebug() << "all bytes in buffer";
+        source->close();
         QObject::disconnect(&asyncExecutor_, &QTimer::timeout, this, &HttpHandler::asyncReadFile);
         allBytesInBuffer = true;
     }
@@ -158,10 +163,10 @@ void HttpHandler::writeResponseString(HttpStatusCode code) {
 
 void HttpHandler::countSentBytes(qint64 sentChunk) {
     bytesSent_ += sentChunk;
-    qInfo() << "sent " << sentChunk << "total" << bytesSent_ << "written" << bytesWritten_;
+    qDebug() << "sent " << sentChunk << "total" << bytesSent_ << "written" << bytesWritten_;
     if (allBytesInBuffer && bytesSent_ == bytesWritten_) {
-        qInfo() << "done: bytes written " << bytesWritten_;
-        qInfo() << "done: bytes sent " << bytesSent_;
+        qDebug() << "done: bytes written " << bytesWritten_;
+        qDebug() << "done: bytes sent " << bytesSent_;
         asyncExecutor_.stop();
         closeConnection();
         emit finish(this);
@@ -186,6 +191,7 @@ void HttpHandler::sendDefaultResponse() {
     flushResponseMetaInfo();
     asyncFlushBuffer();
 }
+
 
 
 

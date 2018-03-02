@@ -72,7 +72,7 @@ void IOBuffer::advanceWritePos(qint64 bytes) {
 
 IOBuffer::IOBuffer(std::size_t bufferSize)
   : buffer_{} {
-        buffer_.resize(bufferSize);
+    buffer_.resize(bufferSize);
 }
 
 qint64 IOBuffer::writeToBuffer(QIODevice *source, qint64 bytes) {
@@ -80,30 +80,36 @@ qint64 IOBuffer::writeToBuffer(QIODevice *source, qint64 bytes) {
         return -1;
     }
 
-    auto [bytesToEnd, bytesFromBegin] = totalBytesAvailableToWrite();
+    auto[bytesToEnd, bytesFromBegin] = totalBytesAvailableToWrite();
 
     if (bytes <= bytesToEnd) {
         auto readBytes = source->read(writePos(), bytes);
         advanceWritePos(readBytes);
         return readBytes;
     } else if (bytes <= bytesToEnd + bytesFromBegin) {
-        source->read(writePos(), bytesToEnd);
-        advanceWritePos(bytesToEnd);
-        source->read(writePos(), bytes - bytesToEnd);
-        advanceWritePos(bytes - bytesToEnd);
-        return bytes;
+        auto readToEnd = source->read(writePos(), bytesToEnd);
+        advanceWritePos(readToEnd);
+        if (readToEnd != bytesToEnd) {
+            return readToEnd;
+        }
+        auto readFromBegin = source->read(writePos(), bytes - bytesToEnd);
+        advanceWritePos(readFromBegin);
+        return readFromBegin + readToEnd;
     } else {
-        source->read(writePos(), bytesToEnd);
-        advanceWritePos(bytesToEnd);
-        source->read(writePos(), bytesFromBegin);
-        advanceWritePos(bytesFromBegin);
-        return bytesToEnd + bytesFromBegin;
+        auto readToEnd = source->read(writePos(), bytesToEnd);
+        advanceWritePos(readToEnd);
+        if (readToEnd != bytesToEnd) {
+            return readToEnd;
+        }
+        auto redFromBegin = source->read(writePos(), bytesFromBegin);
+        advanceWritePos(redFromBegin);
+        return redFromBegin + readToEnd;
     }
 }
 
 qint64 IOBuffer::readFromBuffer(QIODevice *dest, qint64 bytes) {
 
-    auto [bytesToEnd, bytesFromBegin] = totalBytesAvailableToRead();
+    auto[bytesToEnd, bytesFromBegin] = totalBytesAvailableToRead();
 
     if (bytes <= bytesToEnd) {
         auto written = dest->write(readPos(), bytes);

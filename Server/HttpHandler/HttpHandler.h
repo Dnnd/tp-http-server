@@ -37,7 +37,7 @@ public:
 
   void writeHeader(std::string headerName, const QString &headerValue);
 
-  static const int CHUNK_SIZE = 64 * 1024;
+  static const int CHUNK_SIZE = 1024 * 16;
 
 protected slots:
 
@@ -46,7 +46,6 @@ protected slots:
   void asyncReadFile();
 
   void countSentBytes(qint64 sentChunk);
-
 
 private:
 
