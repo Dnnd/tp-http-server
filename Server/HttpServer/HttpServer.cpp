@@ -17,3 +17,7 @@ bool HttpServer::run() {
     return tcp_server_->listen(QHostAddress::LocalHost, config_.getPort());
 }
 
+uint16_t HttpServer::port() const {
+    return config_.getPort();
+}
+

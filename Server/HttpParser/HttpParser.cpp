@@ -5,37 +5,37 @@
 #include <QDebug>
 
 const std::unordered_map<HttpMethod, bool> HttpParser::implementationStatus = {
-  {HttpMethod::GET,     true},
-  {HttpMethod::HEAD,    true},
+        {HttpMethod::GET,     true},
+        {HttpMethod::HEAD,    true},
 
-  {HttpMethod::POST,    false},
-  {HttpMethod::PUT,     false},
-  {HttpMethod::OPTIONS, false},
-  {HttpMethod::DELETE,  false},
-  {HttpMethod::PATCH,   false},
+        {HttpMethod::POST,    false},
+        {HttpMethod::PUT,     false},
+        {HttpMethod::OPTIONS, false},
+        {HttpMethod::DELETE,  false},
+        {HttpMethod::PATCH,   false},
 };
 
 const std::unordered_map<std::string, HttpMethod> HttpParser::methodsCodes = {
-  {"GET",     HttpMethod::GET},
-  {"HEAD",    HttpMethod::HEAD},
+        {"GET",     HttpMethod::GET},
+        {"HEAD",    HttpMethod::HEAD},
 
-  {"POST",    HttpMethod::POST},
-  {"PUT",     HttpMethod::PUT},
-  {"OPTIONS", HttpMethod::OPTIONS},
-  {"DELETE",  HttpMethod::DELETE},
-  {"PATCH",   HttpMethod::PATCH},
+        {"POST",    HttpMethod::POST},
+        {"PUT",     HttpMethod::PUT},
+        {"OPTIONS", HttpMethod::OPTIONS},
+        {"DELETE",  HttpMethod::DELETE},
+        {"PATCH",   HttpMethod::PATCH},
 };
 
 const QMimeDatabase HttpParser::mimeDb{};
 
 HttpParser::HttpParser(QString documentRoot, QByteArray *buffer)
-  : buffer_{buffer},
-    pos{0},
-    uriBegin_{0},
-    document_{documentRoot},
-    externalState_{ExternalState::Processing},
-    internalState_{InternalState::None},
-    versionRe_{R"(^HTTP/1\.[01]{1}$)"} {
+        : buffer_{buffer},
+          pos{0},
+          uriBegin_{0},
+          document_{documentRoot},
+          externalState_{ExternalState::Processing},
+          internalState_{InternalState::None},
+          versionRe_{R"(^HTTP/1\.[01]{1}$)"} {
 }
 
 HttpParser::ExternalState HttpParser::parse() {
@@ -152,7 +152,12 @@ HttpParser::ExternalState HttpParser::switchToVersionParsing() {
 
     if (fileInfo.isDir()) {
         requestInfo_.file.append("index.html");
+        if (!document_.exists(requestInfo_.file)) {
+            setErrorCode(HttpStatusCode::Forbidden);
+            return parseVersion();
+        }
     }
+
     fileInfo.setFile(requestInfo_.file);
 
 

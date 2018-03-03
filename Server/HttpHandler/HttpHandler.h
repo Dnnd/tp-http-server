@@ -54,6 +54,7 @@ private:
   QTimer asyncExecutor_;
 
   IOBuffer outputBuffer_{CHUNK_SIZE * 2};
+    
   QByteArray responseMetaInfoBuffer_;
 
   std::size_t bytesWritten_{0};

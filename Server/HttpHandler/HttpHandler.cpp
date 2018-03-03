@@ -2,20 +2,19 @@
 #include <QtCore/QDateTime>
 #include <QtCore/QBuffer>
 #include "HttpHandler.h"
-#include <QDebug>
 
 namespace {
-  const char *CRLF = "\r\n";
+    const char *CRLF = "\r\n";
 }
 
 const QString HttpHandler::dateformat{"ddd',' d MMM yyyy hh:mm:ss 'GWT'"};
 
 HttpHandler::HttpHandler(const QString &documentRoot, QTcpSocket *socket, QObject *parent)
-  : Handler{socket, parent},
-    buffer_{},
-    parser_{documentRoot, &buffer_},
-    source{nullptr},
-    outputBuffer_{CHUNK_SIZE * 2} {
+        : Handler{socket, parent},
+          buffer_{},
+          parser_{documentRoot, &buffer_},
+          source{nullptr},
+          outputBuffer_{CHUNK_SIZE * 2} {
 }
 
 void HttpHandler::handleNewData() {
@@ -25,6 +24,7 @@ void HttpHandler::handleNewData() {
             break;
 
         case HttpParser::ExternalState::Error:
+            QObject::disconnect(socket_, &QTcpSocket::readyRead, this, &HttpHandler::handleNewDataSlot);
             requestInfo_ = parser_.takeRequestInfo();
             writeResponseString(parser_.getErrorCode());
             qDebug() << parser_.getErrorCode();
@@ -34,6 +34,8 @@ void HttpHandler::handleNewData() {
 
         case HttpParser::ExternalState::Finished:
             qDebug() << "Success: " << buffer_;
+
+            QObject::disconnect(socket_, &QTcpSocket::readyRead, this, &HttpHandler::handleNewDataSlot);
             requestInfo_ = parser_.takeRequestInfo();
             writeResponseString(parser_.getErrorCode());
             writeDefaultHeaders();
@@ -68,19 +70,19 @@ void HttpHandler::processGetRequest() {
         source->setParent(this);
     }
 
-    if (!source->open(QFile::ReadOnly)) {
-      //  qInfo() << source->errorString();
+    if (!source->open(QFile::ReadOnly | QFile::Unbuffered)) {
         QTimer::singleShot(0, this, [this] {
-          processGetRequest();
+            processGetRequest();
         });
+
         return;
     }
 
     writeHeader("Content-Length", std::to_string(source->size()));
     writeHeader("Content-Type", requestInfo_.mimeType);
     flushResponseMetaInfo();
-    QObject::connect(&asyncExecutor_, &QTimer::timeout, this, &HttpHandler::asyncReadFile);
-    QObject::connect(&asyncExecutor_, &QTimer::timeout, this, &HttpHandler::asyncWriteToSocket);
+    QObject::connect(&asyncExecutor_, &QTimer::timeout, this, &HttpHandler::asyncReadFile, Qt::QueuedConnection);
+    QObject::connect(&asyncExecutor_, &QTimer::timeout, this, &HttpHandler::asyncWriteToSocket, Qt::QueuedConnection);
     QObject::connect(socket_, &QTcpSocket::bytesWritten, this, &HttpHandler::countSentBytes);
     asyncExecutor_.start();
 }
@@ -93,7 +95,7 @@ void HttpHandler::asyncWriteToSocket() {
     if (bytesToEnd + bytesFromBegin == 0) {
         return;
     }
-
+    qDebug() << "from end:" << bytesToEnd << "from begin :" << bytesFromBegin;
     outputBuffer_.readFromBuffer(socket_, bytesToEnd + bytesFromBegin);
 
     if (bytesSent_ == -1) {
@@ -108,7 +110,14 @@ void HttpHandler::asyncReadFile() {
         return;
     }
 
-    bytesWritten_ += outputBuffer_.writeToBuffer(source, CHUNK_SIZE);
+
+    auto[bytesToEnd, bytesFromBegin] = outputBuffer_.totalBytesAvailableToWrite();
+
+    if (bytesToEnd + bytesFromBegin == 0) {
+        return;
+    }
+
+    bytesWritten_ += outputBuffer_.writeToBuffer(source, bytesToEnd + bytesFromBegin);
 
     qDebug() << "written" << bytesWritten_;
 
@@ -169,7 +178,6 @@ void HttpHandler::countSentBytes(qint64 sentChunk) {
         qDebug() << "done: bytes sent " << bytesSent_;
         asyncExecutor_.stop();
         closeConnection();
-        emit finish(this);
     }
 }
 
@@ -182,8 +190,8 @@ void HttpHandler::flushResponseMetaInfo() {
 
 void HttpHandler::asyncFlushBuffer() {
     allBytesInBuffer = true;
-    QObject::connect(&asyncExecutor_, &QTimer::timeout, this, &HttpHandler::asyncWriteToSocket);
-    QObject::connect(socket_, &QTcpSocket::bytesWritten, this, &HttpHandler::countSentBytes);
+    QObject::connect(&asyncExecutor_, &QTimer::timeout, this, &HttpHandler::asyncWriteToSocket, Qt::QueuedConnection);
+    QObject::connect(socket_, &QTcpSocket::bytesWritten, this, &HttpHandler::countSentBytes, Qt::QueuedConnection);
     asyncExecutor_.start();
 }
 

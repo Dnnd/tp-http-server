@@ -12,6 +12,7 @@ Q_OBJECT
 public:
     explicit HttpServer(Config config, QObject *parent = nullptr);
     bool run();
+    uint16_t port() const;
 private:
     Config config_;
     ConcurrentTcpServer *tcp_server_{nullptr};

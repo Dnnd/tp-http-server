@@ -12,13 +12,12 @@ int main(int argc, char **argv) {
 
     Config conf;
     conf.readConfig("/etc/httpd.conf");
-    qDebug() << QDir{"/home/danm/code/http-test-sute/"}.
-      relativeFilePath("//httptest/../../../../../../../../../../../../../etc/passwd").startsWith("..");
 
     HttpServer server{std::move(conf), &app};
 
     if (server.run()) {
-        qDebug() << "Server started";
+        qInfo() << "Server started on" << server.port() ;
+
         return app.exec();
     } else {
         app.exit(1);

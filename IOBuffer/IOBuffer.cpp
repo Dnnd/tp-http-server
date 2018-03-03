@@ -15,23 +15,17 @@ std::pair<std::size_t, std::size_t> IOBuffer::totalBytesAvailableToRead() const 
         return {0, 0};
     }
 
-    if (readPos_ <= writePos_) {
+    if (isFull) {
+        return {buffer_.size() - readPos_, writePos_};
+    }
+
+    if (readPos_ < writePos_) {
         return {writePos_ - readPos_, 0};
     } else {
         return {buffer_.size() - readPos_, writePos_};
     }
 }
 
-std::size_t IOBuffer::bytesAvailableToReadAtOnce() const {
-    if (isEmpty) {
-        return 0;
-    }
-    if (readPos_ <= writePos_) {
-        return writePos_ - readPos_;
-    } else {
-        return buffer_.size() - readPos_;
-    }
-}
 
 void IOBuffer::advanceReadPos(qint64 bytes) {
     readPos_ = (readPos_ + bytes) % buffer_.size();
@@ -42,99 +36,94 @@ void IOBuffer::advanceReadPos(qint64 bytes) {
     }
 }
 
-std::size_t IOBuffer::bytesAvailableToWriteAtOnce() const {
-    if (isEmpty) {
-        return buffer_.size();
-    }
-    if (writePos_ < readPos_) {
-        return readPos_ - writePos_;
-    } else {
-        return buffer_.size() - writePos_;
-    }
-}
-
 std::pair<std::size_t, std::size_t> IOBuffer::totalBytesAvailableToWrite() const {
     if (isEmpty) {
         return {buffer_.size(), 0};
     }
-
-    if (writePos_ + 1 <= readPos_) {
-        return {readPos_ - (writePos_ + 1), 0};
+    if (isFull) {
+        return {0, 0};
+    }
+    if (writePos_ < readPos_) {
+        return {readPos_ - writePos_, 0};
     } else {
-        return {buffer_.size() - writePos_, (readPos_ == 0) ? 0 : readPos_ - 1};
+        return {buffer_.size() - writePos_, readPos_};
     }
 }
 
 void IOBuffer::advanceWritePos(qint64 bytes) {
     writePos_ = (writePos_ + bytes) % buffer_.size();
-    isEmpty = writePos_ == readPos_;
+    isFull = writePos_ == readPos_;
 }
 
 IOBuffer::IOBuffer(std::size_t bufferSize)
-  : buffer_{} {
-    buffer_.resize(bufferSize);
+        : buffer_(bufferSize) {
 }
 
 qint64 IOBuffer::writeToBuffer(QIODevice *source, qint64 bytes) {
     if (bytes > buffer_.size()) {
         return -1;
     }
-
+    if (isFull) {
+        return 0;
+    }
     auto[bytesToEnd, bytesFromBegin] = totalBytesAvailableToWrite();
+    qint64 writtenUntilEnd{0};
+    qint64 writtenFromBegin{0};
 
     if (bytes <= bytesToEnd) {
-        auto readBytes = source->read(writePos(), bytes);
-        advanceWritePos(readBytes);
-        return readBytes;
+        writtenUntilEnd = source->read(writePos(), bytes);
+        advanceWritePos(writtenUntilEnd);
     } else if (bytes <= bytesToEnd + bytesFromBegin) {
-        auto readToEnd = source->read(writePos(), bytesToEnd);
-        advanceWritePos(readToEnd);
-        if (readToEnd != bytesToEnd) {
-            return readToEnd;
+        writtenUntilEnd = source->read(writePos(), bytesToEnd);
+        advanceWritePos(writtenUntilEnd);
+        if (writtenUntilEnd == bytesToEnd) {
+            writtenFromBegin = source->read(writePos(), bytes - bytesToEnd);
+            advanceWritePos(writtenFromBegin);
         }
-        auto readFromBegin = source->read(writePos(), bytes - bytesToEnd);
-        advanceWritePos(readFromBegin);
-        return readFromBegin + readToEnd;
     } else {
-        auto readToEnd = source->read(writePos(), bytesToEnd);
-        advanceWritePos(readToEnd);
-        if (readToEnd != bytesToEnd) {
-            return readToEnd;
+        writtenUntilEnd = source->read(writePos(), bytesToEnd);
+        advanceWritePos(writtenUntilEnd);
+        if (writtenUntilEnd == bytesToEnd) {
+            writtenFromBegin = source->read(writePos(), bytesFromBegin);
+            advanceWritePos(writtenFromBegin);
         }
-        auto redFromBegin = source->read(writePos(), bytesFromBegin);
-        advanceWritePos(redFromBegin);
-        return redFromBegin + readToEnd;
     }
+    if (isEmpty) {
+        isEmpty = (writtenFromBegin + writtenUntilEnd) == 0;
+    }
+    return writtenFromBegin + writtenUntilEnd;
 }
 
 qint64 IOBuffer::readFromBuffer(QIODevice *dest, qint64 bytes) {
-
+    if (isEmpty) {
+        return 0;
+    }
     auto[bytesToEnd, bytesFromBegin] = totalBytesAvailableToRead();
+    qint64 readUntilEnd{0};
+    qint64 readFromBegin{0};
 
     if (bytes <= bytesToEnd) {
-        auto written = dest->write(readPos(), bytes);
-        advanceReadPos(written);
-        return written;
+        readUntilEnd = dest->write(readPos(), bytes);
+        advanceReadPos(readUntilEnd);
     } else if (bytes <= bytesToEnd + bytesFromBegin) {
-        auto writtenToEnd = dest->write(readPos(), bytesToEnd);
-        advanceReadPos(writtenToEnd);
-        if (writtenToEnd < bytesToEnd) {
-            return writtenToEnd;
+        readUntilEnd = dest->write(readPos(), bytesToEnd);
+        advanceReadPos(readUntilEnd);
+        if (readUntilEnd == bytesToEnd) {
+            readFromBegin = dest->write(readPos(), bytes - bytesToEnd);
+            advanceReadPos(readFromBegin);
         }
-        auto writtenFromBegin = dest->write(readPos(), bytes - bytesToEnd);
-        advanceReadPos(writtenFromBegin);
-        return writtenFromBegin + writtenToEnd;
     } else {
-        auto writtenToEnd = dest->write(readPos(), bytesToEnd);
-
-        advanceReadPos(writtenToEnd);
-        if (writtenToEnd < bytesToEnd) {
-            return writtenToEnd;
+        readUntilEnd = dest->write(readPos(), bytesToEnd);
+        advanceReadPos(readUntilEnd);
+        if (readUntilEnd == bytesToEnd) {
+            readFromBegin = dest->write(readPos(), bytesFromBegin);
+            advanceReadPos(readFromBegin);
         }
-        auto writtenFromBegin = dest->write(readPos(), bytesFromBegin);
-        advanceReadPos(writtenFromBegin);
-        return writtenFromBegin + writtenToEnd;
     }
+    if (isFull) {
+        isFull = (readFromBegin + readUntilEnd) == 0;
+    }
+    return readFromBegin + readUntilEnd;
 }
 
 std::size_t IOBuffer::size() const {

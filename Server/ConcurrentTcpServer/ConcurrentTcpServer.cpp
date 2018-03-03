@@ -15,9 +15,9 @@ ConcurrentTcpServer::ConcurrentTcpServer(unsigned threadsLimit, std::unique_ptr<
         QObject::connect(controller,
                          &HolderController::newDescriptor,
                          holder,
-                         &HandlerHolder::registerConnection);
+                         &HandlerHolder::registerConnection, Qt::QueuedConnection);
 
-        QObject::connect(&thread, &QThread::finished, holder, &QObject::deleteLater);
+        QObject::connect(&thread, &QThread::finished, holder, &QObject::deleteLater, Qt::QueuedConnection);
 
         holder->moveToThread(&thread);
         holderControllers_.push_back(controller);

@@ -1,13 +1,10 @@
 #include "Handler.h"
 
 Handler::Handler(QTcpSocket *socket, QObject *parent)
-  : QObject{parent},
-    socket_{socket} {
+        : QObject{parent},
+          socket_{socket} {
     QObject::connect(socket_, &QTcpSocket::readyRead, this, &Handler::handleNewDataSlot);
     QObject::connect(socket_, &QTcpSocket::disconnected, this, &Handler::handleDisconnectSlot);
-    QObject::connect(socket_, static_cast<void (QTcpSocket::*)(QAbstractSocket::SocketError)>(&QAbstractSocket::error),
-                     this,
-                     &Handler::handleErrorSlot);
 
 
 }

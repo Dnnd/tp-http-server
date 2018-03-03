@@ -3,6 +3,7 @@
 void HandlerHolder::registerConnection(int socketDescriptor) {
 
     auto *socket = new QTcpSocket{this};
+    socket->setSocketOption(QAbstractSocket::LowDelayOption, 1);
 
     if (!socket->setSocketDescriptor(socketDescriptor)) {
         qDebug() << socket->error();
