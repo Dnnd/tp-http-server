@@ -8,6 +8,6 @@ Handler *HttpHandlerHolder::createHandler(QTcpSocket *socket, QObject *parent) c
 }
 
 HttpHandlerHolder::HttpHandlerHolder(QString documentRoot)
-        : documentRoot_{std::move(documentRoot)} {
+  : documentRoot_{std::move(documentRoot)} {
 
 }

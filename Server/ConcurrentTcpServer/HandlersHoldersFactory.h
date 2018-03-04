@@ -8,8 +8,9 @@ class HandlersHoldersFactory {
 
 public:
 
-    virtual HandlerHolder *createHandlerHolder() const = 0;
-    virtual ~HandlersHoldersFactory() = default;
+  virtual HandlerHolder *createHandlerHolder() const = 0;
+
+  virtual ~HandlersHoldersFactory() = default;
 };
 
 

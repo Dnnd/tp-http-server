@@ -12,10 +12,12 @@
 class HttpHandlerHolder : public HandlerHolder {
 
 public:
-    explicit HttpHandlerHolder(QString documentRoot);
-    Handler *createHandler(QTcpSocket *socket, QObject *parent) const override;
+  explicit HttpHandlerHolder(QString documentRoot);
+
+  Handler *createHandler(QTcpSocket *socket, QObject *parent) const override;
+
 private:
-    QString documentRoot_;
+  QString documentRoot_;
 };
 
 

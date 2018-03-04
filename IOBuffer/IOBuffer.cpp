@@ -56,7 +56,7 @@ void IOBuffer::advanceWritePos(qint64 bytes) {
 }
 
 IOBuffer::IOBuffer(std::size_t bufferSize)
-        : buffer_(bufferSize) {
+  : buffer_(bufferSize) {
 }
 
 qint64 IOBuffer::writeToBuffer(QIODevice *source, qint64 bytes) {

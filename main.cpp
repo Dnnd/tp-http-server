@@ -1,8 +1,6 @@
-#include <iostream>
 #include <QCoreApplication>
 #include <QtCore/QFileInfo>
 #include <QtCore/QDir>
-#include <fstream>
 #include "Config/Config.h"
 #include "Server/HttpServer/HttpServer.h"
 

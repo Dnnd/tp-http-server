@@ -3,7 +3,6 @@
 #include <QtCore/QUrl>
 #include "Config.h"
 #include <QDebug>
-#include <iostream>
 
 uint16_t Config::getPort() const {
     return port_;
@@ -90,9 +89,9 @@ bool Config::readConfig(const QString &fileName) {
 }
 
 Config::Config(std::string listenKey, std::string cpuLimitKey, std::string documentRootKey)
-        : LISTEN_KEY{std::move(listenKey)},
-          CPU_LIMIT_KEY{std::move(cpuLimitKey)},
-          DOCUMENT_ROOT_KEY{std::move(documentRootKey)} {
+  : LISTEN_KEY{std::move(listenKey)},
+    CPU_LIMIT_KEY{std::move(cpuLimitKey)},
+    DOCUMENT_ROOT_KEY{std::move(documentRootKey)} {
 
 }
 
@@ -101,13 +100,13 @@ bool Config::isValid() const {
 }
 
 Config::Config(Config &&other) noexcept
-        : LISTEN_KEY{other.LISTEN_KEY},
-          CPU_LIMIT_KEY{other.CPU_LIMIT_KEY},
-          DOCUMENT_ROOT_KEY{other.DOCUMENT_ROOT_KEY},
-          isValid_{other.isValid_},
-          port_{other.port_},
-          cpuLimit_{other.cpuLimit_},
-          documentRoot_{other.documentRoot_} {
+  : LISTEN_KEY{other.LISTEN_KEY},
+    CPU_LIMIT_KEY{other.CPU_LIMIT_KEY},
+    DOCUMENT_ROOT_KEY{other.DOCUMENT_ROOT_KEY},
+    isValid_{other.isValid_},
+    port_{other.port_},
+    cpuLimit_{other.cpuLimit_},
+    documentRoot_{other.documentRoot_} {
 
 }
 

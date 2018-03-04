@@ -4,21 +4,26 @@
 #include "HttpHandler.h"
 
 namespace {
-    const char *CRLF = "\r\n";
+  const char *CRLF = "\r\n";
+  const int MAX_RECIEVE_BUFFER_SIZE = 4 * 1024;
 }
 
 const QString HttpHandler::dateformat{"ddd',' d MMM yyyy hh:mm:ss 'GWT'"};
 
 HttpHandler::HttpHandler(const QString &documentRoot, QTcpSocket *socket, QObject *parent)
-        : Handler{socket, parent},
-          buffer_{},
-          parser_{documentRoot, &buffer_},
-          source{nullptr},
-          outputBuffer_{CHUNK_SIZE * 2} {
+  : Handler{socket, parent},
+    buffer_{},
+    parser_{documentRoot, &buffer_},
+    source{nullptr},
+    outputBuffer_{CHUNK_SIZE * 2} {
 }
 
 void HttpHandler::handleNewData() {
     buffer_.append(socket_->readAll());
+    if (buffer_.size() >= MAX_RECIEVE_BUFFER_SIZE) {
+        closeConnection();
+        return;
+    }
     switch (parser_.parse()) {
         case HttpParser::ExternalState::Processing:
             break;
@@ -58,6 +63,7 @@ void HttpHandler::handleDisconnect() {
 void HttpHandler::handleError(QTcpSocket::SocketError error) {
     qDebug() << socket_->errorString();
     socket_->deleteLater();
+    socket_->close();
 }
 
 void HttpHandler::closeConnection() {
@@ -72,7 +78,7 @@ void HttpHandler::processGetRequest() {
 
     if (!source->open(QFile::ReadOnly | QFile::Unbuffered)) {
         QTimer::singleShot(0, this, [this] {
-            processGetRequest();
+          processGetRequest();
         });
 
         return;
@@ -95,14 +101,7 @@ void HttpHandler::asyncWriteToSocket() {
     if (bytesToEnd + bytesFromBegin == 0) {
         return;
     }
-    qDebug() << "from end:" << bytesToEnd << "from begin :" << bytesFromBegin;
     outputBuffer_.readFromBuffer(socket_, bytesToEnd + bytesFromBegin);
-
-    if (bytesSent_ == -1) {
-        qDebug() << socket_->errorString();
-        closeConnection();
-    }
-
 }
 
 void HttpHandler::asyncReadFile() {
@@ -136,8 +135,6 @@ void HttpHandler::processHeadRequest() {
     writeHeader("Content-Type", requestInfo_.mimeType);
     flushResponseMetaInfo();
     asyncFlushBuffer();
-
-    asyncExecutor_.start();
 }
 
 void HttpHandler::writeHeader(std::string headerName, std::string headerValue) {

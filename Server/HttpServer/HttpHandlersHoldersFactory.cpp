@@ -7,7 +7,7 @@ HandlerHolder *HttpHandlersHoldersFactory::createHandlerHolder() const {
 }
 
 HttpHandlersHoldersFactory::HttpHandlersHoldersFactory(const QString &documentRoot)
-    :documentRoot_{documentRoot}{
+  : documentRoot_{documentRoot} {
 
 }
 

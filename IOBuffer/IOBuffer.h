@@ -11,33 +11,33 @@ class IOBuffer {
 
 public:
 
-    explicit IOBuffer(std::size_t bufferSize);
+  explicit IOBuffer(std::size_t bufferSize);
 
-    const char *readPos() const;
+  const char *readPos() const;
 
-    char *writePos();
+  char *writePos();
 
-    std::pair<std::size_t, std::size_t> totalBytesAvailableToWrite() const;
+  std::pair<std::size_t, std::size_t> totalBytesAvailableToWrite() const;
 
-    std::pair<std::size_t, std::size_t> totalBytesAvailableToRead() const;
+  std::pair<std::size_t, std::size_t> totalBytesAvailableToRead() const;
 
-    void advanceReadPos(qint64 bytes);
+  void advanceReadPos(qint64 bytes);
 
-    void advanceWritePos(qint64 bytes);
+  void advanceWritePos(qint64 bytes);
 
-    qint64 writeToBuffer(QIODevice *source, qint64 bytes);
+  qint64 writeToBuffer(QIODevice *source, qint64 bytes);
 
-    qint64 readFromBuffer(QIODevice *dest, qint64 bytes);
+  qint64 readFromBuffer(QIODevice *dest, qint64 bytes);
 
-    std::size_t size() const;
+  std::size_t size() const;
 
 private:
-    std::vector<char> buffer_;
-    bool isEmpty{true};
-    bool isFull{false};
+  std::vector<char> buffer_;
+  bool isEmpty{true};
+  bool isFull{false};
 
-    std::size_t readPos_{0};
-    std::size_t writePos_{0};
+  std::size_t readPos_{0};
+  std::size_t writePos_{0};
 };
 
 

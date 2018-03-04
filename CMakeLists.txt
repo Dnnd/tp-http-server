@@ -5,9 +5,9 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_AUTOMOC ON)
 
 find_package(Qt5 COMPONENTS Core Network)
-IF(CMAKE_BUILD_TYPE MATCHES "Release")
+IF (CMAKE_BUILD_TYPE MATCHES "Release")
     add_definitions(-DQT_NO_DEBUG_OUTPUT)
-ENDIF(CMAKE_BUILD_TYPE MATCHES "Release")
+ENDIF (CMAKE_BUILD_TYPE MATCHES "Release")
 
 add_executable(tp_http_server main.cpp
         Server/HttpServer/HttpServer.cpp

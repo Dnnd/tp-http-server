@@ -8,28 +8,28 @@
 class Handler : public QObject {
 Q_OBJECT
 public:
-    explicit Handler(QTcpSocket *socket, QObject *parent = nullptr);
+  explicit Handler(QTcpSocket *socket, QObject *parent = nullptr);
 
-    virtual void handleNewData() = 0;
+  virtual void handleNewData() = 0;
 
-    virtual void handleDisconnect() = 0;
+  virtual void handleDisconnect() = 0;
 
-    virtual void handleError(QTcpSocket::SocketError error) = 0;
+  virtual void handleError(QTcpSocket::SocketError error) = 0;
 
 public slots:
 
-    void handleNewDataSlot();
+  void handleNewDataSlot();
 
-    void handleDisconnectSlot();
+  void handleDisconnectSlot();
 
-    void handleErrorSlot(QTcpSocket::SocketError error);
+  void handleErrorSlot(QTcpSocket::SocketError error);
 
 signals:
 
-    void finish(Handler *handler);
+  void finish(Handler *handler);
 
 protected:
-    QTcpSocket *socket_;
+  QTcpSocket *socket_;
 };
 
 

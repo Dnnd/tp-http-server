@@ -7,12 +7,12 @@
 
 class HttpHandlersHoldersFactory : public HandlersHoldersFactory {
 public:
-    explicit HttpHandlersHoldersFactory(const QString &documentRoot);
+  explicit HttpHandlersHoldersFactory(const QString &documentRoot);
 
-    HandlerHolder *createHandlerHolder() const override;
+  HandlerHolder *createHandlerHolder() const override;
 
 private:
-    QString documentRoot_;
+  QString documentRoot_;
 };
 
 

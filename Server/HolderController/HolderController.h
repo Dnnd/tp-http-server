@@ -4,12 +4,14 @@
 
 #include <QtCore/QObject>
 
-class HolderController : public QObject{
-    Q_OBJECT
+class HolderController : public QObject {
+Q_OBJECT
 public:
-    void scheduleConnectionRegistration(int socketDescriptor);
+  void scheduleConnectionRegistration(int socketDescriptor);
+
 signals:
-    void newDescriptor(int socketDescriptor);
+
+  void newDescriptor(int socketDescriptor);
 };
 
 

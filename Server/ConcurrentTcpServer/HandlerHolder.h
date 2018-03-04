@@ -7,18 +7,20 @@
 #include "Handler.h"
 
 class HandlerHolder : public QObject {
-    Q_OBJECT
+Q_OBJECT
 public:
-    void registerHandler(Handler *handler);
+  void registerHandler(Handler *handler);
 
-    virtual Handler* createHandler(QTcpSocket *socket, QObject *parent) const = 0;
+  virtual Handler *createHandler(QTcpSocket *socket, QObject *parent) const = 0;
 
 public slots:
-    void registerConnection(int socketDescriptor);
-    void removeHandler(Handler *handler);
+
+  void registerConnection(int socketDescriptor);
+
+  void removeHandler(Handler *handler);
 
 private:
-    std::unordered_set<Handler*> handlers_;
+  std::unordered_set<Handler *> handlers_;
 };
 
 

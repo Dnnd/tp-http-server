@@ -4,15 +4,17 @@
 
 
 HttpServer::HttpServer(Config config, QObject *parent)
-        : QObject{parent},
-          config_{std::move(config)} {
+  : QObject{parent},
+    config_{std::move(config)} {
 }
 
 
 bool HttpServer::run() {
 
-    tcp_server_ = new ConcurrentTcpServer{config_.getCpuLimit(),std::make_unique<HttpHandlersHoldersFactory>(config_.getDocumentRoot()), this};
-    return tcp_server_->listen(QHostAddress::LocalHost, config_.getPort());
+    tcp_server_ = new ConcurrentTcpServer{config_.getCpuLimit(),
+                                          std::make_unique<HttpHandlersHoldersFactory>(config_.getDocumentRoot()),
+                                          this};
+    return tcp_server_->listen(QHostAddress::Any, config_.getPort());
 }
 
 uint16_t HttpServer::port() const {

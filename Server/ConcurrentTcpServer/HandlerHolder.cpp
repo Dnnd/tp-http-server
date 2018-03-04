@@ -1,5 +1,6 @@
 
 #include "HandlerHolder.h"
+
 void HandlerHolder::registerConnection(int socketDescriptor) {
 
     auto *socket = new QTcpSocket{this};

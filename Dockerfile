@@ -1,7 +1,7 @@
-FROM base/archlinux
+FROM ubuntu:17.10
 
-RUN pacman -Sy cmake clang qt5-base --noconfirm
-RUN pacman -Sy make --noconfirm
+RUN apt-get update && apt-get install -y cmake clang++-5.0 make qtbase5-dev
+
 ENV SRC_DIR /root/tp_http_server/
 
 ADD . $SRC_DIR
@@ -12,8 +12,7 @@ WORKDIR $SRC_DIR/build
 
 ENV PATH $PATH:$SRC_DIR/build
 
-RUN cmake -DCMAKE_C_COMPILER=/usr/bin/clang \
-          -DCMAKE_CXX_COMPILER=/usr/bin/clang++ \
+RUN cmake -DCMAKE_CXX_COMPILER=/usr/bin/clang++-5.0 \
           -DCMAKE_BUILD_TYPE=Release \
           -DCMAKE_CXX_FLAGS="-O3" \
           -DCMAKE_MAKE_PROGRAM=/usr/bin/make \

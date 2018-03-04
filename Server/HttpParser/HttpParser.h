@@ -17,69 +17,69 @@ class HttpParser {
 public:
 
 
-    enum class ExternalState {
-        Processing,
-        Error,
-        Finished,
-    };
+  enum class ExternalState {
+    Processing,
+    Error,
+    Finished,
+  };
 
-    enum class InternalState {
-        None,
-        Method,
-        Uri,
-        Version
-    };
+  enum class InternalState {
+    None,
+    Method,
+    Uri,
+    Version
+  };
 
-    explicit HttpParser(QString documentRoot, QByteArray *buffer);
+  explicit HttpParser(QString documentRoot, QByteArray *buffer);
 
 
-    ExternalState parse();
+  ExternalState parse();
 
-    HttpStatusCode getErrorCode() const;
+  HttpStatusCode getErrorCode() const;
 
-    HttpRequestInfo takeRequestInfo();
-
-private:
-    ExternalState startProcessing();
-
-    ExternalState parseMethod();
-
-    ExternalState switchToUriParsing();
-
-    ExternalState parseUri();
-
-    ExternalState switchToVersionParsing();
-
-    ExternalState parseVersion();
+  HttpRequestInfo takeRequestInfo();
 
 private:
-    QByteArray *buffer_;
+  ExternalState startProcessing();
 
-    std::size_t pos;
+  ExternalState parseMethod();
 
-    std::size_t uriBegin_;
-    std::size_t versionBegin_;
+  ExternalState switchToUriParsing();
 
-    QDir document_;
+  ExternalState parseUri();
 
-    HttpRequestInfo requestInfo_;
+  ExternalState switchToVersionParsing();
 
-    ExternalState externalState_;
-    InternalState internalState_;
+  ExternalState parseVersion();
 
-    HttpStatusCode errorCode_{HttpStatusCode::OK};
+private:
+  QByteArray *buffer_;
 
-    static const std::unordered_map<std::string, HttpMethod > methodsCodes;
+  std::size_t pos;
 
-    static const std::unordered_map<HttpMethod, bool > implementationStatus;
+  std::size_t uriBegin_;
+  std::size_t versionBegin_;
 
-    const QRegExp versionRe_;
+  QDir document_;
 
-    static const QMimeDatabase mimeDb;
+  HttpRequestInfo requestInfo_;
 
-    ExternalState setErrorCode(HttpStatusCode code);
+  ExternalState externalState_;
+  InternalState internalState_;
 
-    ExternalState parseRequestEnd();
+  HttpStatusCode errorCode_{HttpStatusCode::OK};
+
+  static const std::unordered_map<std::string, HttpMethod> methodsCodes;
+
+  static const std::unordered_map<HttpMethod, bool> implementationStatus;
+
+  const QRegExp versionRe_;
+
+  static const QMimeDatabase mimeDb;
+
+  ExternalState setErrorCode(HttpStatusCode code);
+
+  ExternalState parseRequestEnd();
 };
 
 
