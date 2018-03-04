@@ -3,6 +3,7 @@
 #include <QtCore/QUrl>
 #include "Config.h"
 #include <QDebug>
+#include <iostream>
 
 uint16_t Config::getPort() const {
     return port_;
@@ -35,10 +36,10 @@ bool Config::applyConfigLine(QString configLine) {
     }
 
     auto key = statements.at(0).toStdString();
+
     bool ok = true;
     if (key == LISTEN_KEY) {
         auto listen = static_cast<uint16_t>(statements.at(1).toUInt(&ok));
-
         if (!ok) {
             return false;
         } else {
@@ -66,7 +67,10 @@ bool Config::applyConfigLine(QString configLine) {
 
 bool Config::readConfig(const QString &fileName) {
     QFile configFile{fileName};
+
     if (!configFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
+
+        isValid_ = false;
         return false;
     }
 
@@ -75,19 +79,20 @@ bool Config::readConfig(const QString &fileName) {
     while (!in.atEnd()) {
         QString line = in.readLine();
         if (!applyConfigLine(line)) {
+            configFile.close();
             isValid_ = false;
             return false;
         }
     }
-
+    configFile.close();
     isValid_ = true;
     return true;
 }
 
 Config::Config(std::string listenKey, std::string cpuLimitKey, std::string documentRootKey)
-  : LISTEN_KEY{std::move(listenKey)},
-    CPU_LIMIT_KEY{std::move(cpuLimitKey)},
-    DOCUMENT_ROOT_KEY{std::move(documentRootKey)} {
+        : LISTEN_KEY{std::move(listenKey)},
+          CPU_LIMIT_KEY{std::move(cpuLimitKey)},
+          DOCUMENT_ROOT_KEY{std::move(documentRootKey)} {
 
 }
 
@@ -96,13 +101,13 @@ bool Config::isValid() const {
 }
 
 Config::Config(Config &&other) noexcept
-  : LISTEN_KEY{other.LISTEN_KEY},
-    CPU_LIMIT_KEY{other.CPU_LIMIT_KEY},
-    DOCUMENT_ROOT_KEY{other.DOCUMENT_ROOT_KEY},
-    isValid_{other.isValid_},
-    port_{other.port_},
-    cpuLimit_{other.cpuLimit_},
-    documentRoot_{other.documentRoot_} {
+        : LISTEN_KEY{other.LISTEN_KEY},
+          CPU_LIMIT_KEY{other.CPU_LIMIT_KEY},
+          DOCUMENT_ROOT_KEY{other.DOCUMENT_ROOT_KEY},
+          isValid_{other.isValid_},
+          port_{other.port_},
+          cpuLimit_{other.cpuLimit_},
+          documentRoot_{other.documentRoot_} {
 
 }
 
